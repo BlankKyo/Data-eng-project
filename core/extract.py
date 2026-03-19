@@ -3,6 +3,7 @@ import logging
 import os
 import json
 from datetime import datetime
+from dotenv import load_dotenv
 
 # SETUP LOGGING
 LOG_PATH = os.path.join("..", "logs", "pipeline.log")
@@ -15,84 +16,87 @@ logging.basicConfig(
     ]
 )
 
-def fetch_repo_data():
-    """
-    Fetches metadata for a specific GitHub repository via the GitHub REST API.
+BRONZE_DATA_PATH = os.path.join("..", "db", "data", "bronze", "flights.json")
+BRONZE_CORDS_DATA_PATH = os.path.join("..", "db", "data", "bronze", "cords.json")
 
-    This function performs an authenticated or unauthenticated GET request to 
-    the GitHub API. It handles network timeouts and common HTTP errors to 
-    ensure pipeline stability.
+load_dotenv() 
+
+
+def get_region_bbox(place_name):
+    """
+    Fetches the geographical bounding box for a location via Nominatim API.
+
+    Queries the API, saves the raw result to the bronze data layer, and 
+    extracts the min/max latitude and longitude.
 
     Args:
-        repo_owner (str): The GitHub username or organization (e.g., 'google').
-        repo_name (str): The name of the repository (e.g., 'go').
+        place_name (str): The search query (e.g., 'Berlin' or 'Paris').
 
     Returns:
-        Optional[Dict[str, Any]]: A dictionary containing the repository metadata 
-            if successful; None if an error occurs during extraction.
-
-    Raises:
-        requests.exceptions.HTTPError: If the API returns a non-200 status code.
-        requests.exceptions.Timeout: If the server takes longer than 10 seconds to respond.
-        requests.exceptions.RequestException: For any other network-related issues.
+        list: [dict of coordinates, place_name] or None if not found.
     """
-    api_url = "https://api.github.com/orgs/google/repos?per_page=10&sort=updated"
-    
+    logging.info(f"Starting bounding box extraction for: {place_name}")
     try:
-        logging.info("Connecting to GitHub API to fetch Google's latest repos...")
-        
-        # Adding a User-Agent is a best practice to avoid 403 errors
-        headers = {'User-Agent': 'Data-Intern-Project'}
-        response = requests.get(api_url, headers=headers, timeout=10)
-        
-        # The 'Senior' way to handle the response
-        if response.status_code == 200:
-            logging.info("success: 200 OK. Data retrieved.")
-            return {"repos": response.json()}
-        else:
-            logging.error(f"Failed with status code: {response.status_code}")
-            return None
 
+        url = os.getenv("NOMINATIM_URL")
+        params = {'q': place_name, 'format': 'json', 'limit': 1}
+        headers = {'User-Agent': 'FlightTrackerInternApp/1.0'} # Required by Nominatim
+        
+        response = requests.get(url, params=params, headers=headers)
+        data = response.json()
+
+        
+        if data:
+            with open(BRONZE_CORDS_DATA_PATH, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4) 
+            # Nominatim returns [lat_min, lat_max, lon_min, lon_max]
+            bbox = data[0]['boundingbox']
+            return [{
+                'lamin': float(bbox[0]),
+                'lamax': float(bbox[1]),
+                'lomin': float(bbox[2]),
+                'lomax': float(bbox[3])
+            }, place_name]
+        return None
+    except Exception as e:
+        logging.error(f"Error fetching bounding box for {place_name}: {e}")
+        return None
+
+def get_live_flights(bbox):
+    """
+    Fetch real-time flight data from OpenSky Network within a bounding box.
+
+    Connects to the OpenSky API, saves the raw response to the bronze layer,
+    and extracts the state vectors (flights) found in the specified region.
+
+    Args:
+        bbox (list): A list containing [dict of coordinates, place_name].
+                    The dict must have 'lamin', 'lamax', 'lomin', 'lomax' keys.
+
+    Returns:
+        list: A list of state vectors (lists) representing flights. 
+              Returns an empty list if no flights are found or if the request fails.
+    """
+    url = os.getenv("OPENSKY_URL")
+    logging.info(f"Starting live airplanes extraction for: {bbox[1]}")
+    try:
+        response = requests.get(url, params=bbox[0])
+        
+        if response.status_code == 200:
+            data = response.json()
+            # Extract just the 'states' list
+            flights = data.get('states', []) or []
+            
+            
+            with open(BRONZE_DATA_PATH, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4) 
+
+            logging.info(f"Successfully saved {len(flights)} flights to {BRONZE_DATA_PATH}")
+            return flights
+        else:
+            logging.error(f"Error: API returned status code {response.status_code}")
+            return []
+            
     except Exception as e:
         logging.error(f"An error occurred: {e}")
-        return None
-    
-
-Data_PATH = os.path.join("..", "db", "raw")
-
-def save_raw_data(data, folder=Data_PATH):
-    """
-    Saves the raw JSON data to a local file system with a unique timestamp.
-
-    This function ensures the destination directory exists, generates a 
-    filename based on the current system time, and persists the dictionary 
-    as a formatted JSON file.
-
-    Args:
-        data (dict): The dictionary containing API response data to be saved.
-        folder (str, optional): The relative path to the target directory. 
-            Defaults to "data/raw".
-
-    Returns:
-        None
-
-    Raises:
-        OSError: If the directory cannot be created or the file cannot be written.
-        TypeError: If the provided data is not JSON serializable.
-    """
-    if not data:
-        return
-    
-    os.makedirs(folder, exist_ok=True)
-    
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{folder}/repo_data_{timestamp}.json"
-    
-    with open(filename, 'w') as f:
-        json.dump(data, f, indent=4)
-    
-    logging.info(f"Raw data saved to {filename}")
-
-if __name__ == "__main__":
-    raw_json = fetch_repo_data()
-    save_raw_data(raw_json)
+        return []
