@@ -5,19 +5,11 @@ import json
 from datetime import datetime
 from dotenv import load_dotenv
 
-# SETUP LOGGING
-LOG_PATH = os.path.join("..", "logs", "pipeline.log")
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_PATH),
-        logging.StreamHandler()
-    ]
-)
+# This automatically names the logger after the file (e.g., core.extract)
+logger = logging.getLogger(__name__)
 
-BRONZE_DATA_PATH = os.path.join("..", "db", "data", "bronze", "flights.json")
-BRONZE_CORDS_DATA_PATH = os.path.join("..", "db", "data", "bronze", "cords.json")
+BRONZE_DATA_PATH = os.path.join("db", "data", "bronze", "flights.json")
+BRONZE_CORDS_DATA_PATH = os.path.join("db", "data", "bronze", "cords.json")
 
 load_dotenv() 
 
@@ -35,7 +27,7 @@ def get_region_bbox(place_name):
     Returns:
         list: [dict of coordinates, place_name] or None if not found.
     """
-    logging.info(f"Starting bounding box extraction for: {place_name}")
+    logger.info(f"Starting bounding box extraction for: {place_name}")
     try:
 
         url = os.getenv("NOMINATIM_URL")
@@ -59,7 +51,7 @@ def get_region_bbox(place_name):
             }, place_name]
         return None
     except Exception as e:
-        logging.error(f"Error fetching bounding box for {place_name}: {e}")
+        logger.error(f"Error fetching bounding box for {place_name}: {e}")
         return None
 
 def get_live_flights(bbox):
@@ -78,7 +70,7 @@ def get_live_flights(bbox):
               Returns an empty list if no flights are found or if the request fails.
     """
     url = os.getenv("OPENSKY_URL")
-    logging.info(f"Starting live airplanes extraction for: {bbox[1]}")
+    logger.info(f"Starting live airplanes extraction for: {bbox[1]}")
     try:
         response = requests.get(url, params=bbox[0])
         
@@ -91,12 +83,12 @@ def get_live_flights(bbox):
             with open(BRONZE_DATA_PATH, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=4) 
 
-            logging.info(f"Successfully saved {len(flights)} flights to {BRONZE_DATA_PATH}")
+            logger.info(f"Successfully saved {len(flights)} flights to {BRONZE_DATA_PATH}")
             return flights
         else:
-            logging.error(f"Error: API returned status code {response.status_code}")
+            logger.error(f"Error: API returned status code {response.status_code}")
             return []
             
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return []
