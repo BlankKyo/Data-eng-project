@@ -1,6 +1,8 @@
 import logging
 import pandas as pd
 
+logger = logging.getLogger(__name__)
+
 def transform_flight_data(raw_flights):
     """
     Transforms raw OpenSky state vectors into a structured Silver-layer DataFrame.
@@ -14,10 +16,10 @@ def transform_flight_data(raw_flights):
     Returns:
         pd.DataFrame: A cleaned DataFrame. Returns an empty DF if input is empty.
     """
-    logging.info(f"Starting transformation for {len(raw_flights)} raw records.")
+    logger.info(f"Starting transformation for {len(raw_flights)} raw records.")
 
     if not raw_flights:
-        logging.warning("No flight data received. Returning empty DataFrame.")
+        logger.warning("No flight data received. Returning empty DataFrame.")
         return pd.DataFrame()
 
     try:
@@ -48,9 +50,9 @@ def transform_flight_data(raw_flights):
         
         df_silver = df[essential_cols].copy()
         
-        logging.info(f"Transformation complete. {len(df_silver)} valid flights processed.")
+        logger.info(f"Transformation complete. {len(df_silver)} valid flights processed.")
         return df_silver
 
     except Exception as e:
-        logging.error(f"Failed to transform flight data: {e}")
+        logger.error(f"Failed to transform flight data: {e}")
         return pd.DataFrame()
