@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 BRONZE_DATA_PATH = os.path.join("db", "data", "bronze", "flights.json")
 BRONZE_CORDS_DATA_PATH = os.path.join("db", "data", "bronze", "cords.json")
 
-load_dotenv() 
+load_dotenv(".env.app")  # Load environment variables from .env.app
 
 
 def get_region_bbox(place_name):
