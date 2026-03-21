@@ -21,7 +21,7 @@ services:
     depends_on:
       - db
     env_file:
-      - .env.docker
+      - .env.app
     environment:
       - DB_HOST=db
       - DB_NAME=${POSTGRES_DB}
@@ -29,6 +29,7 @@ services:
       - DB_PASS=${POSTGRES_PASSWORD}
     volumes:
       - ./app:/app  # Live-sync code so you can edit while it runs!
+      - ./data:/data
 
   pgadmin:
     image: dpage/pgadmin4
