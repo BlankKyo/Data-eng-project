@@ -74,14 +74,7 @@ def get_live_flights(bbox):
             flights = data.get('states', []) or []
             raw_time = data.get('time', datetime.now().timestamp())
             formatted_time = datetime.fromtimestamp(raw_time).strftime('%Y%m%d%H%M%S')
-            os.makedirs("/data", exist_ok=True)
-            BRONZE_DATA_PATH = os.path.join("/data", f"flights_{formatted_time}.json")
-
-            
-            with open(BRONZE_DATA_PATH, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=4) 
-
-            logger.info(f"Successfully saved {len(flights)} flights to {BRONZE_DATA_PATH}")
+            logger.info(f"Extracted {len(flights)} flights at {formatted_time}")
             return flights
         else:
             logger.error(f"Error: API returned status code {response.status_code}")

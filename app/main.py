@@ -1,10 +1,12 @@
 import logging
 import os
 import time
-from core.extract import get_region_bbox, get_live_flights
-from db.load import save_aircraft, save_flights_to_db, cleanup_old_data
+from core.extract import get_region_bbox
 from db.database import get_connection
-from . import __title__, __version__
+from core.producer import OpenSkyProducer
+from core.consumer import FlightConsumer
+import threading
+import sys
 
 # SETUP LOGGING
 LOG_PATH = os.path.join("logs", "pipeline.log")
@@ -17,49 +19,60 @@ logging.basicConfig(
     ]
 )
 
+logger = logging.getLogger(__name__)
 
-def run_pipeline():
-    logging.info(f"🚀 {__title__} v{__version__} is taking off!")
-    """
-    The main execution loop.
-    1. Fetches data from OpenSky.
-    2. Updates the 'airplanes' registry.
-    3. Saves 'live_flights' movements.
-    4. Cleans up data older than 2 hours.
-    """
-    Ville = "France"
-    bbox_info = get_region_bbox(Ville)
-    if not bbox_info:
-        logging.error("sadely no France boundings")
-        return
-    conn = get_connection()
-    while True:
-        try:
-            logging.info("🚀 Starting new pipeline cycle...")
-            
-            # 1. EXTRACT
-            raw_data = get_live_flights(bbox_info)
-            if not raw_data:
-                continue
-            
-            # 2. LOAD DIMENSION (Airplanes)
-            # ON CONFLICT DO NOTHING handles the duplicates
-            save_aircraft(raw_data, conn)
+# This flag tells threads when to stop
+shutdown_event = threading.Event()
 
-            # 3. LOAD FACT (Movements)
-            save_flights_to_db(raw_data, conn)
-            
-            # 4. MANAGE STORAGE (The 'Anti-Explosion' step)
-            cleanup_old_data(conn, hours=1)
-            
-            conn.commit()
-            logging.info("😴 Cycle complete. Sleeping for 30s...")
-            time.sleep(30) # OpenSky public API limit is roughly 1 min
-            
-            
-        except Exception as e:
-            logging.error(f"🚨 Pipeline crashed: {e}")
-            time.sleep(10) # Wait before retrying
+def run_producer_thread(server, topic, bbox_info):
+    logger.info("Starting Producer Thread...")
+    try:
+        # Initialize your class
+        p = OpenSkyProducer(server, topic, bbox_info)
+        while not shutdown_event.is_set():
+            p.publish_to_bronze()
+            # Wait 30 seconds before next API pull to avoid being banned by OpenSky
+            time.sleep(30) 
+    except Exception as e:
+        logger.error(f"Producer Thread CRASHED: {e}")
+    finally:
+        logger.info("Producer Thread cleaning up...")
+
+def run_consumer_thread(conn, server, topic):
+    logger.info("Starting Consumer Thread...")
+    try:
+        # Initialize your class
+        c = FlightConsumer(conn, server, topic)
+        # We pass the shutdown_event to the consumer logic
+        c.process_messages()
+    except Exception as e:
+        logger.error(f"Consumer Thread CRASHED: {e}")
+    finally:
+        logger.info("Consumer Thread cleaning up...")
 
 if __name__ == "__main__":
-    run_pipeline()
+    KAFKA_SERVER = "kafka:29092"
+    TOPIC = "flights_bronze"
+    bbox_info = get_region_bbox("France")
+    conn = get_connection() 
+    # 2. Define Threads
+    t1 = threading.Thread(target=run_producer_thread, args=(KAFKA_SERVER, TOPIC, bbox_info), name="ProducerWorker")
+    t2 = threading.Thread(target=run_consumer_thread, args=(conn, KAFKA_SERVER, TOPIC), name="ConsumerWorker")
+
+    try:
+        t1.start()
+        t2.start()
+
+        # Keep the main thread alive while workers are running
+        while t1.is_alive() or t2.is_alive():
+            time.sleep(1)
+
+    except KeyboardInterrupt:
+        logger.info("Shutdown signal received (Ctrl+C)...")
+        shutdown_event.set() # Tell threads to stop loops
+        
+        # Wait for threads to finish their current loop
+        t1.join()
+        t2.join()
+        logger.info("All systems offline. Exit successful.")
+        sys.exit(0)

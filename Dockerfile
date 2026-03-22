@@ -4,6 +4,13 @@ FROM python:3.11-slim
 # Set the working directory inside the container
 WORKDIR /app
 
+# Install system dependencies for confluent-kafka and psycopg2
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    librdkafka-dev \
+    && rm -rf /var/lib/apt/lists/*
+    
 # Install system dependencies for database connection
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
