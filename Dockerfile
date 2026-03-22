@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/li
 # Copy and install Python libraries
 COPY requirements .
 RUN pip install --no-cache-dir -r requirements
+RUN pip install --upgrade pip
 
 # Copy your Python scripts
 COPY app/ .
