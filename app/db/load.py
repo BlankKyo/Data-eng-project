@@ -82,3 +82,29 @@ def save_flights_to_db(flight_list, conn):
     except Exception as e:
         logger.error(f"Unexpected error in save_flights_to_db: {e}")
         raise
+
+
+def cleanup_old_data(conn, hours=2):
+    """
+    Deletes flight positions older than a specific timeframe to save disk space.
+    
+    This keeps the 'live_flights' table lean. We keep the 'airplanes' table 
+    intact as it is a small dimension table.
+    """
+    # SQL query using PostgreSQL's INTERVAL feature
+    query = "DELETE FROM live_flights WHERE observed_at < NOW() - INTERVAL '%s hours';"
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query, (hours,))
+            rows_deleted = cur.rowcount
+        
+        if rows_deleted > 0:
+            logger.info(f"Database Maintenance: Purged {rows_deleted} old flight pings.")
+        else:
+            logger.debug("Database Maintenance: No old data to purge yet.")
+
+    except psycopg2.Error as e:
+        logger.error(f"Cleanup failed: {e}")
+    except Exception as e:
+        logger.error(f"Unexpected error during cleanup: {e}")
