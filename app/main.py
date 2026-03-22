@@ -4,6 +4,7 @@ import time
 from core.extract import get_region_bbox, get_live_flights
 from db.load import save_aircraft, save_flights_to_db, cleanup_old_data
 from db.database import get_connection
+from . import __title__, __version__
 
 # SETUP LOGGING
 LOG_PATH = os.path.join("logs", "pipeline.log")
@@ -18,6 +19,7 @@ logging.basicConfig(
 
 
 def run_pipeline():
+    logging.info(f"🚀 {__title__} v{__version__} is taking off!")
     """
     The main execution loop.
     1. Fetches data from OpenSky.
