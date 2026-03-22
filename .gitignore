@@ -21,4 +21,11 @@ Thumbs.db
 *.bat
 
 # Secrets 
-.env
+.env.app
+.env.docker
+
+# file for diff btw commits in a file:
+change.diff
+
+# ignore bronze data:
+flights_*.json
