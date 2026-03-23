@@ -1,9 +1,10 @@
+# core/consumer.py
 import json
 import logging
 from confluent_kafka import Consumer
 from db.load import save_aircraft, save_flights_to_db, cleanup_old_data
 
-# This automatically names the logger after the file
+# init logger
 logger = logging.getLogger(__name__)
 
 class FlightConsumer:

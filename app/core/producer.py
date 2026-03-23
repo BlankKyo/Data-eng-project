@@ -1,9 +1,10 @@
+# core/producer.py
 import json
 from confluent_kafka import Producer
 from core.extract import get_live_flights
 import logging
 
-# This automatically names the logger after the file
+# init logger
 logger = logging.getLogger(__name__)
 
 class OpenSkyProducer:

@@ -1,4 +1,4 @@
-# app/database.py
+# db/database.py
 import logging
 import os
 import psycopg2

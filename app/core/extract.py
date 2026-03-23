@@ -1,9 +1,10 @@
+# core/extract.py
 import requests
 import logging
 import os
 from datetime import datetime
 
-# This automatically names the logger after the file (e.g., core.extract)
+# init logger
 logger = logging.getLogger(__name__)
 
 def get_region_bbox(place_name):
