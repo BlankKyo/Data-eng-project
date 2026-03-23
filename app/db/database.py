@@ -1,7 +1,6 @@
-# app/database.py
+# db/database.py
 import logging
 import os
-from dotenv import load_dotenv
 import psycopg2
 
 # Load environment variables from .env.app

@@ -1,15 +1,11 @@
+# core/extract.py
 import requests
 import logging
 import os
-import json
 from datetime import datetime
-from dotenv import load_dotenv
 
-# This automatically names the logger after the file (e.g., core.extract)
+# init logger
 logger = logging.getLogger(__name__)
-
-
-load_dotenv(".env.app")  # Load environment variables from .env.app
 
 def get_region_bbox(place_name):
     """
@@ -66,7 +62,7 @@ def get_live_flights(bbox):
     url = os.getenv("OPENSKY_URL")
     logger.info(f"Starting live airplanes extraction for: {bbox[1]}")
     try:
-        response = requests.get(url, params=bbox[0])  # Limit to 1000 results for performance
+        response = requests.get(url, params=bbox[0])  
         
         if response.status_code == 200:
             data = response.json()
@@ -74,14 +70,7 @@ def get_live_flights(bbox):
             flights = data.get('states', []) or []
             raw_time = data.get('time', datetime.now().timestamp())
             formatted_time = datetime.fromtimestamp(raw_time).strftime('%Y%m%d%H%M%S')
-            os.makedirs("/data", exist_ok=True)
-            BRONZE_DATA_PATH = os.path.join("/data", f"flights_{formatted_time}.json")
-
-            
-            with open(BRONZE_DATA_PATH, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=4) 
-
-            logger.info(f"Successfully saved {len(flights)} flights to {BRONZE_DATA_PATH}")
+            logger.info(f"Extracted {len(flights)} flights at {formatted_time}")
             return flights
         else:
             logger.error(f"Error: API returned status code {response.status_code}")

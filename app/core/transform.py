@@ -1,6 +1,8 @@
+# core/transform.py
 from datetime import timezone, datetime
 import logging
 
+# init logger
 logger = logging.getLogger(__name__)
 
 def aircrafts_data(raw_flights):
