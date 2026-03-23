@@ -1,15 +1,10 @@
 import requests
 import logging
 import os
-import json
 from datetime import datetime
-from dotenv import load_dotenv
 
 # This automatically names the logger after the file (e.g., core.extract)
 logger = logging.getLogger(__name__)
-
-
-load_dotenv(".env.app")  # Load environment variables from .env.app
 
 def get_region_bbox(place_name):
     """
@@ -66,7 +61,7 @@ def get_live_flights(bbox):
     url = os.getenv("OPENSKY_URL")
     logger.info(f"Starting live airplanes extraction for: {bbox[1]}")
     try:
-        response = requests.get(url, params=bbox[0])  # Limit to 1000 results for performance
+        response = requests.get(url, params=bbox[0])  
         
         if response.status_code == 200:
             data = response.json()
