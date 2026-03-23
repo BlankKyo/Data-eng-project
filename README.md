@@ -45,8 +45,8 @@ DATA_ENG_PROJ/
 Create two .env files in the root directory.
 You can copy them from .env.example files:
 
-cp .env.app.example .env.app
-cp .env.docker.example .env.docker
+cp .env.app.example .env.app  
+cp .env.docker.example .env.docker  
 
 #### .env.app
 ```
@@ -74,11 +74,11 @@ docker-compose up -d --build
 ```
 This will start:
 
-. PostgreSQL / TimescaleDB
-. Kafka & Zookeeper
-. Kafka UI (AKHQ)
-. pgAdmin
-. Flight tracker Producer/Consumer service
+. PostgreSQL / TimescaleDB  
+. Kafka & Zookeeper  
+. Kafka UI (AKHQ)  
+. pgAdmin  
+. Flight tracker Producer/Consumer service  
 
 
 ## 🛠️ Key Engineering Features
