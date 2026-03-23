@@ -1,6 +1,6 @@
 # ✈️ Sky-Watcher: Real-Time Aviation Streaming Pipeline
 
-A high-performance, **event-driven ETL pipeline** designed to ingest, process, and persist global aircraft movements in France region. This project demonstrates a professional transition from legacy batch processing to a **Modern Data Stack** utilizing Kafka and Time-Series databases.
+A high-performance, **event-driven ETL pipeline** designed to ingest, process, and persist global aircraft movements in France region. This project demonstrates a professional transition from legacy batch processing to a **Modern Data Stack** utilizing Kafka and Time-Series database.
 
 ---
 
@@ -8,14 +8,14 @@ A high-performance, **event-driven ETL pipeline** designed to ingest, process, a
 
 The project follows a Decoupled **Medallion Architecture** to ensure high throughput and data integrity:
 
-1.  **Gold (Analytics/Persistence):** Python-based extraction of state vectors for France geographic bounding box.
+1.  **Extract (API):** Python-based extraction of state vectors for France geographic bounding box.
 2.  **Bronze (Stream):** The `OpenSkyProducer` fetches live state vectors via the OpenSky REST API and streams them into **Apache Kafka** as raw JSON.
 3.  **Silver (Persistence):** The `FlightConsumer` subscribes to Kafka, performs micro-batching (10K rows), schema mapping, coordinate validation and Atomic UPSERTs into PostgreSQL.
 
 ---
 
 ## 📂 Project Structure
-
+```
 DATA_ENG_PROJ/
 ├── app/
 │   ├── main.py          # Orchestrator: Multi-threaded Producer/Consumer management
@@ -28,12 +28,12 @@ DATA_ENG_PROJ/
 │       ├── queries/     # SQL Scripts: Table schemas, Hypertable configs
 │       ├── database.py  # Schema Orchestrator: Connects to DB and runs SQL files
 │       └── load.py      # Batch Loader: High-speed inserts & data lifecycle (Cleanup)
-├── docker-compose.yaml  # Infrastructure: Kafka, Zookeeper, TimescaleDB, AKHQ, pgAdmin
+├── docker-compose.yaml  # Infrastructure: Kafka, Zookeeper, PostgreSQL, AKHQ, pgAdmin
 ├── Dockerfile           # Deployment: Multi-stage Python build for the tracker service
 ├── .env.app             # App Config: API URLs and keys
 ├── .env.docker          # Infra Config: DB Credentials & Broker settings (Hidden by Git)
 └── .gitignore           # Safety: Filters for secrets, __pycache__, and local logs
-
+```
 
 ## 🚀 Getting Started
 
@@ -54,7 +54,6 @@ DB_HOST=db
 DB_NAME=aviation_db
 DB_USER=admin
 DB_PASS=supersecret
-
 ```
 
 #### .env.docker
@@ -65,22 +64,13 @@ POSTGRES_DB=aviation_db
 
 PGADMIN_EMAIL = admin@pro.com
 PGADMIN_PASSWORD = admin
-
 ```
 
 ### 3. 🐳 Run the Full Pipeline
-```
+
 Build and start all services (Kafka, TimescaleDB, Producer, Consumer, pgAdmin, AKHQ):
-
+```
 docker-compose up -d --build
-
-This will start:
-
-. PostgreSQL / TimescaleDB
-. Kafka & Zookeeper
-. Kafka UI (AKHQ)
-. pgAdmin
-. Flight tracker Producer/Consumer service
 ```
 
 ## 🛠️ Key Engineering Features
