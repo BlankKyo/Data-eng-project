@@ -44,9 +44,10 @@ DATA_ENG_PROJ/
 ### 2. 🔑 Environment Configuration
 Create two .env files in the root directory.
 You can copy them from .env.example files:
-
+```
 cp .env.app.example .env.app  
 cp .env.docker.example .env.docker  
+```
 
 #### .env.app
 ```
