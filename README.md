@@ -15,7 +15,7 @@ The project follows a Decoupled **Medallion Architecture** to ensure high throug
 ---
 
 ## 📂 Project Structure
-
+```
 DATA_ENG_PROJ/
 ├── app/
 │   ├── main.py          # Orchestrator: Multi-threaded Producer/Consumer management
@@ -33,7 +33,7 @@ DATA_ENG_PROJ/
 ├── .env.app             # App Config: API URLs and keys
 ├── .env.docker          # Infra Config: DB Credentials & Broker settings (Hidden by Git)
 └── .gitignore           # Safety: Filters for secrets, __pycache__, and local logs
-
+```
 
 ## 🚀 Getting Started
 
@@ -54,7 +54,6 @@ DB_HOST=db
 DB_NAME=aviation_db
 DB_USER=admin
 DB_PASS=supersecret
-
 ```
 
 #### .env.docker
@@ -65,15 +64,14 @@ POSTGRES_DB=aviation_db
 
 PGADMIN_EMAIL = admin@pro.com
 PGADMIN_PASSWORD = admin
-
 ```
 
 ### 3. 🐳 Run the Full Pipeline
-```
+
 Build and start all services (Kafka, TimescaleDB, Producer, Consumer, pgAdmin, AKHQ):
-
+```
 docker-compose up -d --build
-
+```
 This will start:
 
 . PostgreSQL / TimescaleDB
@@ -81,7 +79,7 @@ This will start:
 . Kafka UI (AKHQ)
 . pgAdmin
 . Flight tracker Producer/Consumer service
-```
+
 
 ## 🛠️ Key Engineering Features
 - **Batch Processing:** Uses execute_batch to reduce database I/O overhead by 10x.
